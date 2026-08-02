@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Sondage 2.0 — Prototype de test</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;0,700;1,600&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B1220; --bg2:#050505; --card:#121B2E;
+    --red:#8C4A3C; --redSh:#0B1220;
+    --yellow:#A8863F; --yellowSh:#0B1220;
+    --blue:#33517D; --blueSh:#0B1220;
+    --green:#4E6B57; --greenSh:#0B1220;
+    --accent:#C9A24B;
+    --white:#FFFFFF;
+    --text70: rgba(255,255,255,.68);
+    --text50: rgba(255,255,255,.46);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; min-height:100dvh; background:radial-gradient(circle at 50% -10%, #17233b, var(--bg2) 60%);
+    display:flex; align-items:center; justify-content:center; padding:24px 12px;
+    font-family:'Manrope',sans-serif; color:var(--white);
+  }
+  .phone{
+    width:100%; max-width:400px; height:min(860px, 92dvh);
+    background:var(--bg); border-radius:32px; overflow:hidden; position:relative;
+    box-shadow:0 30px 80px rgba(0,0,0,.6), 0 0 0 8px #000;
+    display:flex; flex-direction:column;
+  }
+  .progress-track{height:3px; background:rgba(255,255,255,.1); position:relative;}
+  .progress-fill{height:100%; background:linear-gradient(90deg,var(--blue),var(--green)); transition:width .35s ease; width:0%;}
+  .screen{flex:1; display:flex; flex-direction:column; padding:26px 22px 22px; overflow-y:auto;}
+  .screen::-webkit-scrollbar{display:none;}
+  h1.title{font-family:'Fraunces',serif; font-weight:600; font-size:1.28rem; line-height:1.3; margin:2px 0 10px; text-align:center;}
+  h1.title.small{font-size:1.05rem;}
+  p.desc{font-size:.86rem; line-height:1.55; color:var(--text70); white-space:pre-line; margin-bottom:16px;}
+  .eyebrow{font-size:.68rem; text-transform:uppercase; letter-spacing:.2em; color:var(--text50); text-align:center; margin-bottom:14px;}
+  .spacer{flex:1; min-height:8px;}
+
+  /* Variante A — choix rapide, cartes horizontales */
+  .rowCards{display:flex; gap:10px; align-items:stretch;}
+  .unoCard{
+    flex:1; aspect-ratio:3/4.1; border-radius:12px; border:1px solid rgba(255,255,255,.08); position:relative;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;
+    padding:8px; color:#fff; font-family:'Manrope',sans-serif; font-weight:600; font-size:.72rem; text-align:center;
+    cursor:pointer; transition:transform .18s ease, opacity .18s ease, border-color .18s ease;
+    box-shadow:0 4px 14px rgba(0,0,0,.35);
+  }
+  .unoCard .emoji{font-size:1.3rem; position:relative; z-index:1; opacity:.85;}
+  .unoCard span.txt{position:relative; z-index:1; line-height:1.3; font-weight:500;}
+  .unoCard.active{transform:translateY(-2px); border-color:var(--accent); box-shadow:0 0 0 1px var(--accent), 0 8px 20px rgba(0,0,0,.4) !important;}
+  .unoCard.inactive{opacity:.28; transform:scale(.97);}
+  .unoCard:active:not(.inactive){transform:scale(.97);}
+
+  /* Variante C — choix multiple vertical */
+  .stackBtn{
+    width:100%; text-align:left; border:1px solid rgba(255,255,255,.1); border-left:3px solid var(--accentBar, var(--accent));
+    background:rgba(255,255,255,.05); border-radius:10px; padding:14px 16px; margin-bottom:10px;
+    font-family:'Manrope',sans-serif; font-weight:500; font-size:.87rem; color:#fff; cursor:pointer;
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    transition:transform .15s ease, background .15s ease;
+  }
+  .stackBtn:active{transform:scale(.99); background:rgba(255,255,255,.09);}
+  .stackBtn .check{width:18px; height:18px; border-radius:50%; background:rgba(255,255,255,.12); display:flex; align-items:center; justify-content:center; font-size:.68rem; flex-shrink:0; color:var(--text70);}
+  .miniInput{
+    width:100%; border-radius:12px; border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.06);
+    color:#fff; padding:11px 14px; font-family:'Manrope',sans-serif; font-size:.85rem; margin-top:-2px; margin-bottom:12px;
+  }
+  .miniInput::placeholder{color:rgba(255,255,255,.4);}
+  .okBtn{border:none; border-radius:12px; background:var(--blue); color:#fff; font-weight:700; padding:11px 18px; margin-top:8px; cursor:pointer; align-self:flex-end;}
+
+  /* Variante D — saisie */
+  .field{margin-bottom:14px;}
+  .field label{display:block; font-size:.66rem; text-transform:uppercase; letter-spacing:.12em; color:var(--text50); margin-bottom:6px;}
+  .field input{width:100%; border-radius:12px; border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.06); color:#fff; padding:13px 14px; font-family:'Manrope',sans-serif; font-size:.9rem;}
+  .primaryBtn{width:100%; border:none; border-radius:16px; background:var(--blue); color:#fff; font-weight:700; padding:15px; font-size:.95rem; cursor:pointer; transition:transform .15s ease;}
+  .primaryBtn:active{transform:scale(.98);}
+  .primaryBtn:disabled{opacity:.4; cursor:not-allowed;}
+  .ghostBtn{width:100%; border:1px solid rgba(255,255,255,.15); background:rgba(255,255,255,.05); border-radius:16px; color:#fff; font-weight:700; padding:15px; font-size:.9rem; cursor:pointer; margin-top:10px;}
+  .consent{display:flex; gap:10px; align-items:flex-start; font-size:.74rem; color:var(--text50); margin:6px 0 16px;}
+  .consent input{margin-top:3px;}
+
+  /* Carte profil (fin de parcours) */
+  .profileCard{
+    background:linear-gradient(180deg, #121B2E, #050505); border:1px solid rgba(255,255,255,.1);
+    border-radius:28px; padding:26px 22px; box-shadow:0 20px 50px rgba(0,0,0,.5);
+  }
+  .profileCard .name{font-family:'Fraunces',serif; font-weight:700; font-size:1.4rem; text-align:center; text-transform:uppercase; letter-spacing:.03em;}
+  .profileCard .tag{text-align:center; font-size:.7rem; text-transform:uppercase; letter-spacing:.2em; color:var(--green); margin-top:4px;}
+  .profileCard .stars{text-align:center; font-size:1.2rem; margin-top:8px;}
+  .profileCard .score{text-align:center; font-size:.72rem; color:var(--text50); margin-top:2px; margin-bottom:18px;}
+  .barRow{margin-bottom:10px;}
+  .barRow .lbl{display:flex; justify-content:space-between; font-size:.76rem; color:var(--text70); margin-bottom:4px;}
+  .barTrack{height:7px; border-radius:5px; background:rgba(255,255,255,.12); overflow:hidden;}
+  .barFill{height:100%; border-radius:5px; background:linear-gradient(90deg,var(--blue),var(--green));}
+  .cardDesc{font-size:.8rem; line-height:1.55; color:var(--text70); text-align:center; margin:16px 0;}
+  .compareBox{background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); border-radius:16px; padding:12px 14px; text-align:center; font-size:.85rem; margin-top:14px;}
+
+  .btnCol{display:flex; flex-direction:column; gap:10px; margin-top:auto; padding-top:18px;}
+  .yesno{display:flex; gap:10px;}
+  .yesno button{flex:1;}
+  .toast{position:fixed; bottom:26px; left:50%; transform:translateX(-50%); background:#fff; color:#050505; font-size:.8rem; font-weight:600; padding:10px 18px; border-radius:999px; opacity:0; transition:opacity .25s ease; pointer-events:none; z-index:50;}
+  .toast.show{opacity:1;}
+
+  /* Mockup visuel Q2 : téléphone (photo plein écran) vs menu papier */
+  .mockupRow{display:flex; gap:10px; margin-bottom:18px;}
+  .mockCard{flex:1; border-radius:14px; overflow:hidden; border:1px solid rgba(255,255,255,.1); background:#0E1626;}
+  .mockLabel{font-size:.6rem; text-transform:uppercase; letter-spacing:.1em; color:var(--text50); text-align:center; padding:6px 4px 0;}
+  .photoPlaceholder{
+    aspect-ratio:4/3; margin:6px 8px 0; border-radius:10px; overflow:hidden;
+    background:#1a1206; display:flex; align-items:center; justify-content:center;
+  }
+  .photoPlaceholder img{width:100%; height:100%; object-fit:cover; display:block;}
+  .photoPlaceholder.noimg{font-size:.6rem; color:var(--text50); text-align:center; padding:6px;}
+  .mockDishInfo{padding:8px 10px 4px;}
+  .mockDishInfo strong{display:block; font-size:.72rem; font-weight:600;}
+  .mockDishInfo span{display:block; font-size:.66rem; color:var(--text50); margin-top:2px;}
+  .mockBtn{margin:6px 8px 10px; padding:6px; text-align:center; border-radius:7px; background:var(--accent); color:#1a1206; font-size:.62rem; font-weight:700;}
+  .paperLines{padding:10px 12px 12px;}
+  .paperTitle{font-family:'Fraunces',serif; font-size:.78rem; font-weight:600; color:var(--text70); letter-spacing:.08em; margin-bottom:8px;}
+  .paperItem{display:flex; justify-content:space-between; gap:6px; font-size:.66rem; color:var(--text70); margin-bottom:7px; line-height:1.3;}
+  .paperItem span:last-child{color:var(--text50); white-space:nowrap;}
+</style>
+</head>
+<body>
+
+<div class="phone">
+  <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+  <div class="screen" id="screen"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<!-- Client Supabase (chargé avant le script principal) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+/* ==========================================================
+   CONFIG SUPABASE — à remplacer par tes vraies valeurs
+   (Project Settings > API dans ton dashboard Supabase)
+   ========================================================== */
+const SUPABASE_URL = "https://afbmudcpgwcalmwvmons.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_G-uueTf0u-nme6JxuEVswQ_IVK2oNaH";
+const TABLE_NAME = "reponses_sondage";
+
+let supabaseClient = null;
+try {
+  if (SUPABASE_URL.includes("TON-PROJET") || SUPABASE_ANON_KEY.includes("TA_CLE")) {
+    console.warn("[Supabase] Config non renseignée — les réponses ne seront pas sauvegardées. Remplace SUPABASE_URL et SUPABASE_ANON_KEY.");
+  } else {
+    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  }
+} catch (e) {
+  console.error("[Supabase] Init impossible :", e);
+}
+
+/* Identifiant unique de session — permet de suivre les abandons
+   et de mettre à jour la même ligne plutôt que d'en créer une nouvelle
+   à chaque réponse. */
+const SESSION_ID = (crypto.randomUUID) ? crypto.randomUUID() :
+  'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = Math.random()*16|0, v = c === 'x' ? r : (r&0x3|0x8);
+    return v.toString(16);
+  });
+
+/* Sauvegarde non bloquante pour l'UX, mais SÉRIALISÉE : chaque appel
+   attend que le précédent soit parti avant de démarrer. Sans ça, deux
+   upserts lancés coup sur coup (l'utilisateur répond vite) peuvent
+   arriver dans le désordre côté serveur et le plus ancien écrase le
+   plus récent — perte silencieuse de réponses.
+   Pour les écritures critiques (lead gérant, fin de parcours), on
+   affiche un message si ça échoue au lieu de le laisser filer en
+   console. */
+let _saveQueue = Promise.resolve();
+
+function saveProgress(extra = {}) {
+  const critical = 'completed' in extra || 'lead' in extra;
+  const task = _saveQueue.then(() => _doSave(extra, critical));
+  _saveQueue = task.catch(() => {}); // une erreur ne bloque pas la file
+  return task;
+}
+
+async function _doSave(extra, critical) {
+  if (!supabaseClient) {
+    if (critical) toast("Connexion non configurée — donnée non sauvegardée");
+    return;
+  }
+  try {
+    const payload = {
+      id: SESSION_ID,
+      updated_at: new Date().toISOString(),
+      prenom: state.prenom || null,
+      answers: state.answers,
+      ...extra
+    };
+    const { error } = await supabaseClient
+      .from(TABLE_NAME)
+      .upsert(payload, { onConflict: 'id' });
+    if (error) {
+      console.error("[Supabase] Erreur d'enregistrement :", error);
+      if (critical) toast("Erreur d'enregistrement, réessaie");
+    }
+  } catch (e) {
+    console.error("[Supabase] Échec réseau :", e);
+    if (critical) toast("Pas de réseau, réessaie");
+  }
+}
+
+/* ---------- Palette de cartes UNO (cyclique) ---------- */
+const UNO = [
+  {bg:'var(--red)', sh:'var(--redSh)'},
+  {bg:'var(--yellow)', sh:'var(--yellowSh)'},
+  {bg:'var(--blue)', sh:'var(--blueSh)'},
+  {bg:'var(--green)', sh:'#4f6b4c'},
+];
+
+const DISH_PHOTO = "plat-attieke.jpg";
+
+/* ============ CONTENU DU SONDAGE FUSIONNÉ ============ */
+
+const INTRO = { id:'intro', type:'intro',
+  title:'On teste ton rapport aux restaurants',
+  desc:'2 minutes montre en main. Réponds comme tu le sens, il n\'y a pas de bonne réponse.' };
+
+const MASTER_CLIENT = [
+  { id:'q2', type:'scenario', title:'Lequel choisirais-tu ?', visual:true,
+    desc:"Imagine deux restaurants, mêmes plats, mêmes prix.\n\nDans le 1er (à gauche), tu consultes le menu sur ton téléphone via QR Code — chaque plat en photo plein écran, commande directe depuis ta table.\n\nDans le 2nd (à droite), menu papier classique et commande prise par un serveur.",
+    options:[
+      {id:'numerique', label:'📱 Le restaurant avec le menu numérique'},
+      {id:'papier', label:'📄 Le restaurant avec le menu papier', autre:true, placeholder:'Pourquoi ?'},
+    ]},
+  { id:'mt_presentation', type:'quick', dimension:'presentation',
+    title:'Deux plats identiques en goût. L\'un est juste posé, l\'autre dressé comme sur Instagram. Ça change quoi ?',
+    options:[
+      {id:'a', emoji:'🍲', label:'Rien, seul le goût compte', points:30},
+      {id:'b', emoji:'📸', label:'Ça donne plus envie', points:65},
+      {id:'c', emoji:'✨', label:'Je choisis celui qui est stylé', points:100},
+    ]},
+  { id:'q3', type:'multi', title:'Attendre avant de pouvoir commander, ça t\'arrive :', options:[
+      {id:'tres_souvent', label:'Très souvent'}, {id:'parfois', label:'Parfois'},
+      {id:'rarement', label:'Rarement'}, {id:'jamais', label:'Jamais'},
+  ]},
+  { id:'mt_patience', type:'quick', dimension:'patience', title:'Ta commande met le double du temps annoncé. Tu fais quoi ?', options:[
+      {id:'a', emoji:'😌', label:"J'attends, c'est pas grave", points:30},
+      {id:'b', emoji:'👀', label:"Je checke l'heure toutes les 2 min", points:65},
+      {id:'c', emoji:'🚪', label:"Je demande l'addition et je pars", points:100},
+  ]},
+  { id:'q4', type:'multi', title:"T'est-il déjà arrivé de quitter un resto avant de commander ?", options:[
+      {id:'jamais', label:'Jamais'}, {id:'rarement', label:'Rarement'},
+      {id:'souvent', label:'Souvent'}, {id:'tres_souvent', label:'Très souvent'},
+  ]},
+  { id:'q5', type:'multi', title:'Quelle était la principale raison ?', dependsOn:'q4', dependsOnValues:['rarement','souvent','tres_souvent'], options:[
+      {id:'attente', label:"L'attente"}, {id:'menu_pas_envie', label:'Le menu ne donnait pas envie'},
+      {id:'trop_rempli', label:'Le restaurant était trop rempli'},
+      {id:'autre', label:'Autre', autre:true, placeholder:'Précise'},
+  ]},
+  { id:'q6', type:'quick', title:"Attendre un serveur juste pour une question sur un plat (allergènes, épices...), ça t'arrive :", options:[
+      {id:'rarement', emoji:'🙂', label:'Rarement'}, {id:'parfois', emoji:'😐', label:'Parfois'}, {id:'souvent', emoji:'😩', label:'Souvent'},
+  ]},
+  { id:'mt_service', type:'quick', dimension:'service', title:"Le plat est excellent, mais le serveur t'a ignoré toute la soirée. Ton avis sur le resto ?", options:[
+      {id:'a', emoji:'🍽️', label:'Osef, la bouffe était top', points:30},
+      {id:'b', emoji:'😕', label:"Ça gâche un peu l'expérience", points:65},
+      {id:'c', emoji:'🚫', label:'Je note en mal', points:100},
+  ]},
+  { id:'q7', type:'quick', title:'Pour choisir un plat, ce qui aide le plus :', options:[
+      {id:'photo_video', emoji:'📸', label:'Voir une photo/vidéo'}, {id:'description', emoji:'📝', label:'Lire la description'}, {id:'serveur', emoji:'🙋', label:'Demander au serveur'},
+  ]},
+  { id:'q8', type:'quick', title:"T'est-il déjà arrivé de ne pas commander un plat parce que tu ne savais pas à quoi il ressemblait ?", options:[
+      {id:'oui', emoji:'😬', label:'Oui'}, {id:'non', emoji:'🙅', label:'Non'},
+  ]},
+  { id:'mt_qualite', type:'quick', dimension:'qualite', title:'Le plat arrive : correct, sans plus. Tu réagis comment ?', options:[
+      {id:'a', emoji:'🤷', label:"Ça passe, j'ai mangé", points:30},
+      {id:'b', emoji:'😐', label:'Je finis mais je reviendrai pas', points:65},
+      {id:'c', emoji:'🙅', label:'Je le dis direct au serveur', points:100},
+  ]},
+  { id:'q9', type:'quick', title:'Fonctionnalité envisagée : voir les avis d\'autres clients sur chaque plat avant de commander. Tu les regarderais ?', options:[
+      {id:'oui', emoji:'👀', label:'Oui'}, {id:'non', emoji:'🚫', label:'Non'}, {id:'sais_pas', emoji:'🤔', label:'Je ne sais pas'},
+  ]},
+  { id:'mt_fiabilite', type:'quick', dimension:'fiabilite', title:'Le menu annonçait un plat "épicé", il arrive fade. Ça te fait quoi ?', options:[
+      {id:'a', emoji:'😅', label:"C'est pas grave", points:30},
+      {id:'b', emoji:'🤨', label:'Ça m\'agace, fallait être honnête', points:65},
+      {id:'c', emoji:'❌', label:'Ça casse ma confiance dans le menu', points:100},
+  ]},
+  { id:'q10', type:'quick', visual:true, title:'Un menu numérique comme celui présenté : tu serais prêt à l\'utiliser ?', options:[
+      {id:'oui', emoji:'✅', label:'Oui'}, {id:'non', emoji:'❌', label:'Non'}, {id:'essayer_dabord', emoji:'🤔', label:"J'aimerais d'abord l'essayer"},
+  ]},
+  { id:'q10_raison', type:'text', title:'Pourquoi ?', dependsOn:'q10', dependsOnValues:['non','essayer_dabord'], placeholder:'Ta réponse' },
+  { id:'prenom', type:'prenom' },
+  { id:'profile', type:'profile', profil:'client' },
+  { id:'defi', type:'defi' },
+  { id:'gerant_check', type:'quick', title:'Une dernière chose : es-tu aussi gérant ou employé d\'un restaurant ?', options:[
+      {id:'oui', emoji:'', label:'Oui'}, {id:'non', emoji:'', label:'Non merci'},
+  ]},
+  { id:'gerant_lead', type:'lead', title:'Parfait, on veut te parler', dependsOn:'gerant_check', dependsOnValues:['oui'],
+    desc:'On prépare un mini-questionnaire dédié aux restaurateurs (2 minutes). Laisse tes coordonnées, tu seras contacté(e) en priorité.' },
+  { id:'partage', type:'partage' },
+];
+
+/* ============ PROFILS (carte de fin) ============ */
+const PROFILS_CLIENT = [
+  {id:'detendu', etoiles:1, nom:'Client détendu', emoji:'💆🏽', min:0, max:40, desc:"Tu vas au resto pour manger, pas pour disséquer chaque détail. Zéro drame, juste envie de passer un bon moment."},
+  {id:'attentif', etoiles:2, nom:'Client attentif', emoji:'🧘🏽', min:41, max:55, desc:"Tu remarques les choses, sans en faire un plat. Équilibré, sans prise de tête."},
+  {id:'selectif', etoiles:3, nom:'Client sélectif', emoji:'💁🏽', min:56, max:70, desc:"Tu compares, tu observes — les restaurateurs qui bossent bien, c'est toi qui les repères en premier."},
+  {id:'exigeant', etoiles:4, nom:'Client exigeant', emoji:'🙎🏽', min:71, max:85, desc:"La qualité globale de l'expérience est non-négociable. Tu remarques tout, et tu le fais savoir."},
+  {id:'expert', etoiles:5, nom:'Expert des bonnes adresses', emoji:'🧏🏽', min:86, max:100, desc:"T'as un radar à bons restos. Tes potes te demandent toujours où aller ce soir."},
+];
+
+/* ============ ETAT ============ */
+const state = { answers:{}, master:MASTER_CLIENT, idx:-1, prenom:'' };
+
+function findNext(){
+  state.idx++;
+  while(state.idx < state.master.length){
+    const s = state.master[state.idx];
+    if(!s.dependsOn || (state.answers[s.dependsOn] !== undefined && s.dependsOnValues.includes(state.answers[s.dependsOn]))){
+      return s;
+    }
+    state.idx++;
+  }
+  return {id:'fin', type:'fin'};
+}
+
+function answer(id, value){
+  state.answers[id] = value;
+  saveProgress(); // sauvegarde silencieuse à chaque réponse (utile pour voir les abandons)
+  render(findNext());
+}
+
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 1800);
+}
+
+function updateChrome(step){
+  const total = state.master.length + 1;
+  const pct = Math.min(100, Math.round(((state.idx+1)/total)*100));
+  document.getElementById('progressFill').style.width = pct + '%';
+}
+
+/* ============ RENDU DES VARIANTES ============ */
+const screen = document.getElementById('screen');
+
+function render(step){
+  updateChrome(step);
+  screen.innerHTML = '';
+  switch(step.type){
+    case 'intro': return renderIntro(step);
+    case 'quick': return renderQuick(step);
+    case 'multi': return renderMulti(step);
+    case 'scenario': return renderScenario(step);
+    case 'text': return renderText(step);
+    case 'prenom': return renderPrenom();
+    case 'profile': return renderProfile(step);
+    case 'lead': return renderLead(step);
+    case 'defi': return renderDefi();
+    case 'partage': return renderPartage();
+    case 'fin': return renderPartage();
+  }
+}
+
+function renderIntro(step){
+  const wrap = div(''); wrap.style.justifyContent = 'center'; wrap.style.flex = '1'; wrap.style.textAlign = 'center';
+  wrap.appendChild(el('h1','title', step.title));
+  wrap.appendChild(el('p','desc', step.desc));
+  const ok = document.createElement('button');
+  ok.className = 'primaryBtn'; ok.textContent = 'Commencer';
+  ok.onclick = () => { state.idx = -1; render(findNext()); };
+  wrap.appendChild(ok);
+  screen.appendChild(wrap);
+}
+
+function renderQuick(step){
+  const wrap = div('');
+  wrap.appendChild(el('p','eyebrow', step.dimension ? 'Mini-test éclair' : ''));
+  wrap.appendChild(el('h1','title', step.title));
+  if(step.visual){
+    const mockRow = div('mockupRow');
+    mockRow.innerHTML = mockupHTML();
+    wrap.appendChild(mockRow);
+  }
+  wrap.appendChild(div('spacer'));
+  const row = div('rowCards');
+  let chosen = null;
+  step.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'unoCard';
+    const c = UNO[i % UNO.length];
+    btn.style.background = 'rgba(255,255,255,.045)'; btn.style.borderTop = `3px solid ${c.bg}`;
+    btn.innerHTML = `<span class="emoji">${opt.emoji||''}</span><span class="txt">${opt.label}</span>`;
+    btn.onclick = () => {
+      if(chosen) return; chosen = opt.id;
+      [...row.children].forEach(c2 => c2 !== btn ? c2.classList.add('inactive') : c2.classList.add('active'));
+      if(navigator.vibrate) navigator.vibrate(12);
+      setTimeout(() => {
+        if(step.dimension){
+          answer(step.id, opt.points);
+        } else {
+          answer(step.id, opt.id);
+        }
+      }, 300);
+    };
+    row.appendChild(btn);
+  });
+  wrap.appendChild(row);
+  screen.appendChild(wrap);
+}
+
+function renderMulti(step){
+  const wrap = div('');
+  wrap.appendChild(el('h1','title', step.title));
+  wrap.appendChild(div('spacer', true));
+  const list = div('');
+  let openAutre = null;
+  step.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'stackBtn';
+    const c = UNO[i % UNO.length];
+    btn.style.borderLeftColor = c.bg;
+    btn.innerHTML = `<span>${opt.label}</span><span class="check">›</span>`;
+    btn.onclick = () => {
+      if(opt.autre){
+        if(openAutre === opt.id){ return; }
+        openAutre = opt.id;
+        renderMultiAutre(step, opt);
+        return;
+      }
+      answer(step.id, opt.id);
+    };
+    list.appendChild(btn);
+  });
+  wrap.appendChild(list);
+  screen.appendChild(wrap);
+}
+
+function renderMultiAutre(step, opt){
+  screen.innerHTML = '';
+  const wrap = div('');
+  wrap.appendChild(el('h1','title small', step.title));
+  wrap.appendChild(el('p','desc', `Tu as choisi : "${opt.label}"`));
+  const input = document.createElement('input');
+  input.className = 'miniInput'; input.placeholder = opt.placeholder || 'Précise';
+  input.autofocus = true;
+  wrap.appendChild(input);
+  const ok = document.createElement('button');
+  ok.className = 'primaryBtn'; ok.textContent = 'Continuer';
+  ok.onclick = () => answer(step.id, {option: opt.id, texte: input.value});
+  wrap.appendChild(ok);
+  screen.appendChild(wrap);
+}
+
+function mockupHTML(){
+  return `
+      <div class="mockCard">
+        <div class="mockLabel">Numérique</div>
+        <div class="photoPlaceholder"><img src="${DISH_PHOTO}" alt="Attiéké au poulet" onerror="this.parentElement.classList.add('noimg'); this.parentElement.textContent='Ajoute plat-attieke.jpg dans le dossier'; this.remove();"></div>
+        <div class="mockDishInfo"><strong>Attiéké au poulet</strong><span>3 500 FCFA</span></div>
+        <div class="mockBtn">Commander</div>
+      </div>
+      <div class="mockCard">
+        <div class="mockLabel">Papier</div>
+        <div class="paperLines">
+          <div class="paperTitle">MENU</div>
+          <div class="paperItem"><span>Attiéké au poulet</span><span>3 500</span></div>
+        </div>
+      </div>`;
+}
+
+function renderScenario(step){
+  const wrap = div('');
+  wrap.appendChild(el('h1','title', step.title));
+  if(step.visual){
+    const row = div('mockupRow');
+    row.innerHTML = mockupHTML();
+    wrap.appendChild(row);
+  }
+  wrap.appendChild(el('p','desc', step.desc));
+  const list = div('');
+  step.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'stackBtn';
+    const c = UNO[i % UNO.length];
+    btn.style.borderLeftColor = c.bg;
+    btn.innerHTML = `<span>${opt.label}</span><span class="check">›</span>`;
+    btn.onclick = () => {
+      if(opt.autre){ renderMultiAutre(step, opt); return; }
+      answer(step.id, opt.id);
+    };
+    list.appendChild(btn);
+  });
+  wrap.appendChild(list);
+  screen.appendChild(wrap);
+}
+
+function renderText(step){
+  const wrap = div('');
+  wrap.appendChild(el('h1','title', step.title));
+  wrap.appendChild(div('spacer'));
+  const input = document.createElement('input');
+  input.className = 'miniInput'; input.placeholder = step.placeholder; input.autofocus = true;
+  wrap.appendChild(input);
+  const ok = document.createElement('button');
+  ok.className = 'primaryBtn'; ok.textContent = 'Continuer';
+  ok.onclick = () => answer(step.id, input.value);
+  wrap.appendChild(ok);
+  screen.appendChild(wrap);
+}
+
+function renderPrenom(){
+  const wrap = div('');
+  wrap.style.justifyContent = 'center'; wrap.style.flex = '1';
+  wrap.appendChild(el('h1','title', 'Quel est ton prénom ?'));
+  const input = document.createElement('input');
+  input.className = 'miniInput'; input.placeholder = 'Ton prénom'; input.autofocus = true;
+  input.style.textAlign = 'center';
+  wrap.appendChild(input);
+  const ok = document.createElement('button');
+  ok.className = 'primaryBtn'; ok.textContent = 'Voir mon profil';
+  ok.onclick = () => { if(!input.value.trim()) return; state.prenom = input.value.trim(); render(findNext()); };
+  wrap.appendChild(ok);
+  screen.appendChild(wrap);
+}
+
+function computeClientScores(){
+  const dims = ['patience','qualite','service','presentation','fiabilite'];
+  const scores = {};
+  dims.forEach(d => scores[d] = state.answers['mt_'+d] ?? 0);
+  const global = Math.round(dims.reduce((a,d)=>a+scores[d],0)/dims.length);
+  const profil = PROFILS_CLIENT.find(p => global>=p.min && global<=p.max) || PROFILS_CLIENT[PROFILS_CLIENT.length-1];
+  return {scores, global, profil, labels:{patience:'Patience', qualite:'Qualité', service:'Service', presentation:'Présentation', fiabilite:'Fiabilité'}};
+}
+function renderProfile(step){
+  const data = computeClientScores();
+  const wrap = div('');
+  const card = div('profileCard');
+  card.innerHTML = `
+    <div class="name">${state.prenom} ${data.profil.emoji}</div>
+    <div class="tag">${data.profil.nom}</div>
+    <div class="stars">${'⭐'.repeat(data.profil.etoiles)}<span style="opacity:.25">${'☆'.repeat(5-data.profil.etoiles)}</span></div>
+    <div class="score">Score : ${data.global}/100</div>
+  `;
+  const bars = document.createElement('div'); bars.style.marginTop = '18px';
+  Object.entries(data.scores).forEach(([k,v]) => {
+    const row = div('barRow');
+    row.innerHTML = `<div class="lbl"><span>${data.labels[k]}</span><span>${v}%</span></div><div class="barTrack"><div class="barFill" style="width:${v}%"></div></div>`;
+    bars.appendChild(row);
+  });
+  card.appendChild(bars);
+  card.appendChild(el('p','cardDesc', data.profil.desc));
+  wrap.appendChild(card);
+  const next = document.createElement('button');
+  next.className = 'primaryBtn'; next.style.marginTop = '18px';
+  next.textContent = 'Continuer';
+  next.onclick = () => render(findNext());
+  wrap.appendChild(next);
+  screen.appendChild(wrap);
+  state._lastProfileData = data;
+
+  // On sauvegarde le score final calculé — utile pour trier/filtrer côté Supabase
+  saveProgress({ profil: data.profil.id, score: data.global });
+}
+
+function renderLead(step){
+  const wrap = div('');
+  wrap.appendChild(el('h1','title', step.title));
+  wrap.appendChild(el('p','desc', step.desc));
+  const fields = [
+    {id:'nom_restaurant', label:'Nom du restaurant'},
+    {id:'contact', label:'Numéro / WhatsApp / email'},
+    {id:'ville', label:'Ville'},
+  ];
+  const vals = {};
+  fields.forEach(f => {
+    const wrapF = div('field');
+    wrapF.innerHTML = `<label>${f.label}</label>`;
+    const input = document.createElement('input');
+    input.oninput = (e) => vals[f.id] = e.target.value;
+    wrapF.appendChild(input);
+    wrap.appendChild(wrapF);
+  });
+  let consentOk = false;
+  const consent = div('consent');
+  consent.innerHTML = `<input type="checkbox" id="consentBox"><label for="consentBox">J'accepte d'être recontacté(e) au sujet de ce projet.</label>`;
+  consent.querySelector('input').onchange = (e) => consentOk = e.target.checked;
+  wrap.appendChild(consent);
+  const ok = document.createElement('button');
+  ok.className = 'primaryBtn'; ok.textContent = 'Envoyer';
+  ok.onclick = () => {
+    if(!vals.nom_restaurant || !vals.contact || !vals.ville || !consentOk){ toast('Complète tous les champs + le consentement'); return; }
+    saveProgress({ lead: vals }); // sauvegarde explicite du lead gérant, séparément des réponses
+    answer(step.id, vals);
+  };
+  wrap.appendChild(ok);
+  screen.appendChild(wrap);
+}
+
+function renderDefi(){
+  const wrap = div('');
+  wrap.appendChild(el('h1','title small', 'Défie un ami'));
+  wrap.appendChild(el('p','desc', 'Selon toi, lequel choisira-t-il ?'));
+  let menuChoisi = null, ami = null;
+  const row1 = div('rowCards'); row1.style.marginBottom = '18px';
+  [['numerique','📱 Numérique'], ['papier','📄 Papier']].forEach(([id,label], i) => {
+    const b = document.createElement('button'); b.className = 'unoCard';
+    const c = UNO[i]; b.style.background = 'rgba(255,255,255,.045)'; b.style.borderTop = `3px solid ${c.bg}`;
+    b.innerHTML = `<span class="txt" style="font-size:.85rem">${label}</span>`;
+    b.onclick = () => { menuChoisi = id; [...row1.children].forEach(x=>x.classList.toggle('active', x===b)); };
+    row1.appendChild(b);
+  });
+  wrap.appendChild(row1);
+  wrap.appendChild(el('p','desc', 'Penses-tu que ton meilleur ami est plus exigeant que toi ? 😱'));
+  const row2 = div('yesno');
+  [['oui','Oui'], ['non','Non']].forEach(([id,label]) => {
+    const b = document.createElement('button'); b.className = 'stackBtn'; b.style.background = 'rgba(255,255,255,.08)';
+    b.textContent = label;
+    b.onclick = () => { ami = id; [...row2.children].forEach(x=>x.style.background = 'rgba(255,255,255,.08)'); b.style.background = 'var(--blue)'; };
+    row2.appendChild(b);
+  });
+  wrap.appendChild(row2);
+  const ok = document.createElement('button');
+  ok.className = 'primaryBtn'; ok.style.marginTop = '16px'; ok.textContent = 'Continuer';
+  ok.onclick = () => {
+    if(!menuChoisi || !ami) { toast('Réponds aux deux questions'); return; }
+    state.answers['defi_menu'] = menuChoisi;
+    state.answers['defi_ami'] = ami;
+    saveProgress();
+    render(findNext());
+  };
+  wrap.appendChild(ok);
+  screen.appendChild(wrap);
+}
+
+function renderPartage(){
+  const wrap = div(''); wrap.style.justifyContent = 'center'; wrap.style.flex = '1'; wrap.style.textAlign = 'center';
+  const data = state._lastProfileData;
+  wrap.innerHTML = '';
+  wrap.appendChild(el('p','desc', 'Envoie-lui le test et comparez vos profils.'));
+  const lienPartage = `${location.origin}${location.pathname}?ref=${SESSION_ID.slice(0,8)}`;
+  const texte = `Je viens de découvrir mon profil "${data?.profil?.nom ?? ''}" sur le sondage restauration 🍽️. Fais le test toi aussi !\n${lienPartage}`;
+  const b1 = document.createElement('button'); b1.className = 'primaryBtn'; b1.textContent = '📤 Envoyer le défi';
+  b1.onclick = () => { navigator.clipboard?.writeText(texte); toast('Lien copié'); };
+  const b2 = document.createElement('button'); b2.className = 'ghostBtn'; b2.textContent = '📋 Copier le lien';
+  b2.onclick = () => { navigator.clipboard?.writeText(lienPartage); toast('Copié !'); };
+  const b3 = document.createElement('button'); b3.className = 'ghostBtn'; b3.style.marginTop='24px'; b3.style.opacity='.6'; b3.textContent = '↺ Rejouer (mode test)';
+  b3.onclick = () => { location.reload(); };
+  wrap.appendChild(b1); wrap.appendChild(b2); wrap.appendChild(b3);
+  screen.appendChild(wrap);
+
+  // Marque le parcours comme terminé
+  saveProgress({ completed: true });
+}
+
+/* ---------- helpers DOM ---------- */
+function div(cls, grow){ const d = document.createElement('div'); d.className = cls; if(grow) d.style.flex='1'; return d; }
+function el(tag, cls, txt){ const e = document.createElement(tag); e.className = cls; e.textContent = txt; return e; }
+
+/* ---------- démarrage ---------- */
+render(INTRO);
+</script>
+</body>
+</html>

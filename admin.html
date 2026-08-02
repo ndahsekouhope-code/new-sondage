@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sondage — Espace admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B1220; --bg2:#050505; --card:#121B2E;
+    --accent:#C9A24B; --blue:#33517D; --green:#4E6B57;
+    --white:#FFFFFF; --text70:rgba(255,255,255,.68); --text50:rgba(255,255,255,.46);
+    --danger:#8C4A3C;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; min-height:100vh; background:radial-gradient(circle at 50% -10%, #17233b, var(--bg2) 60%);
+    font-family:'Manrope',sans-serif; color:var(--white); padding:24px;
+  }
+  h1,h2{font-family:'Fraunces',serif; font-weight:700; margin:0;}
+  .wrap{max-width:1100px; margin:0 auto;}
+
+  /* ---- login ---- */
+  #loginScreen{
+    max-width:380px; margin:12vh auto; background:var(--card); border:1px solid rgba(255,255,255,.08);
+    border-radius:20px; padding:32px; text-align:center;
+  }
+  #loginScreen h1{font-size:1.3rem; margin-bottom:6px;}
+  #loginScreen p{color:var(--text50); font-size:.85rem; margin-bottom:22px;}
+  .field{margin-bottom:14px; text-align:left;}
+  .field label{display:block; font-size:.66rem; text-transform:uppercase; letter-spacing:.1em; color:var(--text50); margin-bottom:6px;}
+  .field input{width:100%; border-radius:10px; border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.06); color:#fff; padding:11px 13px; font-family:'Manrope',sans-serif; font-size:.9rem;}
+  .btn{border:none; border-radius:12px; background:var(--blue); color:#fff; font-weight:700; padding:12px 18px; font-size:.9rem; cursor:pointer; width:100%;}
+  .btn:disabled{opacity:.5; cursor:not-allowed;}
+  .errMsg{color:#e08a7a; font-size:.78rem; margin-top:10px; min-height:1em;}
+
+  /* ---- dashboard ---- */
+  #dash{display:none;}
+  .topbar{display:flex; justify-content:space-between; align-items:center; margin-bottom:26px; flex-wrap:wrap; gap:12px;}
+  .topbar h1{font-size:1.4rem;}
+  .topbar .who{color:var(--text50); font-size:.8rem;}
+  .ghostBtn{border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.05); color:#fff; border-radius:10px; padding:9px 14px; font-size:.8rem; cursor:pointer; font-family:'Manrope',sans-serif;}
+
+  .kpis{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:26px;}
+  .kpi{background:var(--card); border:1px solid rgba(255,255,255,.08); border-radius:16px; padding:16px 18px;}
+  .kpi .num{font-family:'Fraunces',serif; font-size:1.7rem; font-weight:700;}
+  .kpi .lbl{font-size:.72rem; color:var(--text50); text-transform:uppercase; letter-spacing:.08em; margin-top:2px;}
+
+  .section{background:var(--card); border:1px solid rgba(255,255,255,.08); border-radius:18px; padding:20px 22px; margin-bottom:18px;}
+  .section h2{font-size:1.05rem; margin-bottom:16px;}
+  .qBlock{margin-bottom:20px;}
+  .qBlock:last-child{margin-bottom:0;}
+  .qTitle{font-size:.85rem; font-weight:600; margin-bottom:10px; color:var(--text70);}
+  .barRow{display:flex; align-items:center; gap:10px; margin-bottom:7px; font-size:.78rem;}
+  .barRow .lbl{width:180px; flex-shrink:0; color:var(--text70); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .barTrack{flex:1; height:18px; background:rgba(255,255,255,.06); border-radius:6px; overflow:hidden; position:relative;}
+  .barFill{height:100%; background:linear-gradient(90deg,var(--blue),var(--green)); border-radius:6px;}
+  .barRow .pct{width:70px; text-align:right; color:var(--text50); flex-shrink:0;}
+
+  table{width:100%; border-collapse:collapse; font-size:.8rem;}
+  th{text-align:left; color:var(--text50); font-weight:600; text-transform:uppercase; font-size:.66rem; letter-spacing:.06em; padding:8px 10px; border-bottom:1px solid rgba(255,255,255,.1);}
+  td{padding:9px 10px; border-bottom:1px solid rgba(255,255,255,.05); color:var(--text70);}
+  tr:hover td{background:rgba(255,255,255,.03);}
+  .empty{color:var(--text50); font-size:.82rem; padding:14px 0; text-align:center;}
+  .tag{display:inline-block; background:rgba(201,162,75,.15); color:var(--accent); padding:2px 8px; border-radius:6px; font-size:.68rem; font-weight:600;}
+  .loading{text-align:center; padding:60px 0; color:var(--text50);}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <div id="loginScreen">
+    <h1>Espace admin</h1>
+    <p>Connecte-toi pour voir les réponses du sondage</p>
+    <div class="field"><label>Email</label><input type="email" id="loginEmail" autocomplete="username"></div>
+    <div class="field"><label>Mot de passe</label><input type="password" id="loginPass" autocomplete="current-password"></div>
+    <button class="btn" id="loginBtn">Se connecter</button>
+    <div class="errMsg" id="loginErr"></div>
+  </div>
+
+  <div id="dash">
+    <div class="topbar">
+      <h1>Résultats du sondage</h1>
+      <div style="display:flex; align-items:center; gap:12px;">
+        <span class="who" id="whoAmI"></span>
+        <button class="ghostBtn" id="refreshBtn">↻ Actualiser</button>
+        <button class="ghostBtn" id="exportBtn">⤓ Export CSV</button>
+        <button class="ghostBtn" id="logoutBtn">Déconnexion</button>
+      </div>
+    </div>
+
+    <div id="loadingMsg" class="loading">Chargement des réponses…</div>
+
+    <div id="content" style="display:none;">
+      <div class="kpis" id="kpis"></div>
+
+      <div class="section">
+        <h2>Répartition par question</h2>
+        <div id="questionBreakdown"></div>
+      </div>
+
+      <div class="section">
+        <h2>Leads gérants / restaurateurs</h2>
+        <div id="leadsTable"></div>
+      </div>
+
+      <div class="section">
+        <h2>Toutes les réponses (brut)</h2>
+        <div style="overflow-x:auto;">
+          <table id="rawTable"><thead></thead><tbody></tbody></table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* ==========================================================
+   CONFIG SUPABASE — mêmes valeurs que index.html
+   ========================================================== */
+const SUPABASE_URL = "https://afbmudcpgwcalmwvmons.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_G-uueTf0u-nme6JxuEVswQ_IVK2oNaH";
+const TABLE_NAME = "reponses_sondage";
+
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/* ==========================================================
+   MÉTADONNÉES DES QUESTIONS — copie allégée de MASTER_CLIENT
+   (id, titre, options) uniquement pour afficher des libellés
+   lisibles au lieu des ids bruts stockés en base.
+   Garde ceci synchronisé si tu modifies les questions dans index.html.
+   ========================================================== */
+const QUESTIONS_META = [
+  { id:'q2', title:'Q2 — Menu numérique ou papier ?', options:{numerique:'📱 Numérique', papier:'📄 Papier'} },
+  { id:'mt_presentation', title:'Mini-test — Présentation du plat', points:true },
+  { id:'q3', title:'Q3 — Fréquence d\'attente pour commander', options:{tres_souvent:'Très souvent', parfois:'Parfois', rarement:'Rarement', jamais:'Jamais'} },
+  { id:'mt_patience', title:'Mini-test — Patience', points:true },
+  { id:'q4', title:'Q4 — Déjà parti avant de commander', options:{jamais:'Jamais', rarement:'Rarement', souvent:'Souvent', tres_souvent:'Très souvent'} },
+  { id:'q5', title:'Q5 — Raison du départ', options:{attente:"L'attente", menu_pas_envie:'Menu pas envie', trop_rempli:'Trop rempli'} },
+  { id:'q6', title:'Q6 — Attente d\'un serveur pour une question', options:{rarement:'Rarement', parfois:'Parfois', souvent:'Souvent'} },
+  { id:'mt_service', title:'Mini-test — Service', points:true },
+  { id:'q7', title:'Q7 — Ce qui aide à choisir un plat', options:{photo_video:'Photo/vidéo', description:'Description', serveur:'Serveur'} },
+  { id:'q8', title:'Q8 — Déjà évité un plat par manque de visuel', options:{oui:'Oui', non:'Non'} },
+  { id:'mt_qualite', title:'Mini-test — Qualité', points:true },
+  { id:'q9', title:'Q9 — Intérêt pour les avis clients par plat', options:{oui:'Oui', non:'Non', sais_pas:'Je ne sais pas'} },
+  { id:'mt_fiabilite', title:'Mini-test — Fiabilité', points:true },
+  { id:'q10', title:'Q10 — Prêt à utiliser un menu numérique', options:{oui:'Oui', non:'Non', essayer_dabord:"J'essaierais d'abord"} },
+  { id:'gerant_check', title:'Est aussi gérant/employé de restaurant', options:{oui:'Oui', non:'Non'} },
+  { id:'defi_menu', title:'Défi — pronostic menu pour l\'ami', options:{numerique:'📱 Numérique', papier:'📄 Papier'} },
+  { id:'defi_ami', title:'Défi — ami plus exigeant ?', options:{oui:'Oui', non:'Non'} },
+];
+
+const POINTS_LABELS = {30:'Réponse neutre (30)', 65:'Réponse modérée (65)', 100:'Réponse exigeante (100)'};
+
+let rows = [];
+
+/* ---------- Auth ---------- */
+async function checkSession(){
+  const { data } = await supabaseClient.auth.getSession();
+  if(data.session){ showDash(data.session.user); } else { showLogin(); }
+}
+
+function showLogin(){
+  document.getElementById('loginScreen').style.display = 'block';
+  document.getElementById('dash').style.display = 'none';
+}
+
+async function showDash(user){
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('dash').style.display = 'block';
+  document.getElementById('whoAmI').textContent = user.email;
+  await loadData();
+}
+
+document.getElementById('loginBtn').onclick = async () => {
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPass').value;
+  const errEl = document.getElementById('loginErr');
+  errEl.textContent = '';
+  if(!email || !password){ errEl.textContent = 'Renseigne email et mot de passe.'; return; }
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true; btn.textContent = 'Connexion…';
+  const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  btn.disabled = false; btn.textContent = 'Se connecter';
+  if(error){ errEl.textContent = "Échec de connexion : identifiants incorrects."; return; }
+  showDash(data.user);
+};
+
+document.getElementById('logoutBtn').onclick = async () => {
+  await supabaseClient.auth.signOut();
+  showLogin();
+};
+
+document.getElementById('refreshBtn').onclick = () => loadData();
+
+/* ---------- Data ---------- */
+async function loadData(){
+  document.getElementById('loadingMsg').style.display = 'block';
+  document.getElementById('content').style.display = 'none';
+  const { data, error } = await supabaseClient
+    .from(TABLE_NAME)
+    .select('*')
+    .order('updated_at', { ascending: false });
+  document.getElementById('loadingMsg').style.display = 'none';
+  if(error){
+    document.getElementById('loadingMsg').style.display = 'block';
+    document.getElementById('loadingMsg').textContent = "Erreur de chargement : " + error.message + " (vérifie que la policy SELECT authenticated existe).";
+    return;
+  }
+  rows = data || [];
+  document.getElementById('content').style.display = 'block';
+  renderKpis();
+  renderBreakdown();
+  renderLeads();
+  renderRaw();
+}
+
+function renderKpis(){
+  const total = rows.length;
+  const completed = rows.filter(r => r.completed).length;
+  const rate = total ? Math.round((completed/total)*100) : 0;
+  const scored = rows.filter(r => r.score !== null && r.score !== undefined);
+  const avgScore = scored.length ? Math.round(scored.reduce((a,r)=>a+r.score,0)/scored.length) : 0;
+  const leads = rows.filter(r => r.lead).length;
+
+  const kpis = [
+    { num: total, lbl: 'Réponses totales' },
+    { num: completed, lbl: 'Parcours complétés' },
+    { num: rate+'%', lbl: 'Taux de complétion' },
+    { num: avgScore, lbl: 'Score moyen' },
+    { num: leads, lbl: 'Leads gérants' },
+  ];
+  document.getElementById('kpis').innerHTML = kpis.map(k =>
+    `<div class="kpi"><div class="num">${k.num}</div><div class="lbl">${k.lbl}</div></div>`
+  ).join('');
+}
+
+function renderBreakdown(){
+  const completedRows = rows.filter(r => r.answers);
+  const html = QUESTIONS_META.map(q => {
+    const values = completedRows.map(r => r.answers[q.id]).filter(v => v !== undefined && v !== null);
+    if(values.length === 0) return '';
+
+    let counts = {};
+    if(q.points){
+      values.forEach(v => { counts[v] = (counts[v]||0) + 1; });
+    } else {
+      values.forEach(v => {
+        const key = (typeof v === 'object') ? (v.option || JSON.stringify(v)) : v;
+        counts[key] = (counts[key]||0) + 1;
+      });
+    }
+    const total = values.length;
+    const bars = Object.entries(counts)
+      .sort((a,b) => b[1]-a[1])
+      .map(([key,count]) => {
+        const label = q.points ? (POINTS_LABELS[key] || key) : (q.options?.[key] || key);
+        const pct = Math.round((count/total)*100);
+        return `<div class="barRow">
+          <div class="lbl">${label}</div>
+          <div class="barTrack"><div class="barFill" style="width:${pct}%"></div></div>
+          <div class="pct">${count} (${pct}%)</div>
+        </div>`;
+      }).join('');
+
+    return `<div class="qBlock"><div class="qTitle">${q.title} <span class="tag">${total} réponses</span></div>${bars}</div>`;
+  }).join('');
+
+  document.getElementById('questionBreakdown').innerHTML = html || '<div class="empty">Aucune réponse pour le moment.</div>';
+}
+
+function renderLeads(){
+  const leads = rows.filter(r => r.lead);
+  if(leads.length === 0){
+    document.getElementById('leadsTable').innerHTML = '<div class="empty">Aucun lead pour le moment.</div>';
+    return;
+  }
+  const html = `<table>
+    <thead><tr><th>Restaurant</th><th>Contact</th><th>Ville</th><th>Prénom répondant</th><th>Date</th></tr></thead>
+    <tbody>
+      ${leads.map(r => `<tr>
+        <td>${escapeHtml(r.lead.nom_restaurant||'')}</td>
+        <td>${escapeHtml(r.lead.contact||'')}</td>
+        <td>${escapeHtml(r.lead.ville||'')}</td>
+        <td>${escapeHtml(r.prenom||'')}</td>
+        <td>${formatDate(r.updated_at)}</td>
+      </tr>`).join('')}
+    </tbody>
+  </table>`;
+  document.getElementById('leadsTable').innerHTML = html;
+}
+
+function renderRaw(){
+  if(rows.length === 0){
+    document.getElementById('rawTable').innerHTML = '';
+    document.querySelector('.section:last-child div').innerHTML = '<div class="empty">Aucune réponse pour le moment.</div>';
+    return;
+  }
+  const thead = document.querySelector('#rawTable thead');
+  const tbody = document.querySelector('#rawTable tbody');
+  thead.innerHTML = `<tr><th>Prénom</th><th>Profil</th><th>Score</th><th>Complété</th><th>Mis à jour</th></tr>`;
+  tbody.innerHTML = rows.map(r => `<tr>
+    <td>${escapeHtml(r.prenom||'—')}</td>
+    <td>${escapeHtml(r.profil||'—')}</td>
+    <td>${r.score ?? '—'}</td>
+    <td>${r.completed ? '✅' : '⏳'}</td>
+    <td>${formatDate(r.updated_at)}</td>
+  </tr>`).join('');
+}
+
+document.getElementById('exportBtn').onclick = () => {
+  if(rows.length === 0) return;
+  const cols = ['id','prenom','profil','score','completed','updated_at','created_at'];
+  const csvRows = [cols.join(',')];
+  rows.forEach(r => {
+    csvRows.push(cols.map(c => `"${String(r[c] ?? '').replace(/"/g,'""')}"`).join(','));
+  });
+  const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'sondage_reponses.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+function formatDate(iso){
+  if(!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleDateString('fr-FR', { day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit' });
+}
+
+checkSession();
+</script>
+</body>
+</html>
